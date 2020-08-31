@@ -1,3 +1,6 @@
+
+
+[![codecov](https://codecov.io/gh/cmwylie19/message-service-node/branch/master/graph/badge.svg)](https://codecov.io/gh/cmwylie19/message-service-node)   
 # message-service-node
 
 
