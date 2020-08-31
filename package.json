@@ -1,0 +1,31 @@
+{
+  "name": "message-service",
+  "version": "1.0.0",
+  "description": "Message Service for Chat App",
+  "main": "index.js",
+  "jest": {
+    "testEnvironment": "node"
+  },
+  "scripts": {
+    "test": "jest --watchAll --coverage --silent",
+    "test:unit": "jest --coverage --silent",
+    "test:cov": "jest --coverage",
+    "lint": "npx prettier --write **/* **/*/*",
+    "start": "node -r esm index.js"
+  },
+  "author": "Casey Wylie",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/preset-env": "^7.11.0",
+    "babel-jest": "^26.3.0",
+    "jest": "^26.4.2"
+  },
+  "dependencies": {
+    "dotenv": "^8.2.0",
+    "esm": "^3.2.25",
+    "express": "^4.17.1",
+    "mongodb": "^3.6.0",
+    "redis": "^3.0.2",
+    "socket.io": "^2.3.0"
+  }
+}
