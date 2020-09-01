@@ -2,6 +2,7 @@ import "dotenv/config"
 import express from 'express'
 import http from 'http'
 import socketIO from 'socket.io'
+import { Cache } from './utils/cache'
 
 var app = express();
 const server = http.createServer(app);
@@ -15,8 +16,27 @@ server.listen(port, () => {
 
 var numUsers = 0;
 
+const { client, getAsync, setAsync, scanAsync } = Cache();
+
 io.on('connection', (socket) => {
-  var addedUser = false;
+  console.log(`Connection ${socket.id}`)
+
+
+  socket.on("CONCURRENT_USERS", () => {
+    scanAsync("concurrent:*").then(results => {
+      console.log(JSON.stringify(results))
+      //   Promise.all(results.map(result => getAsync(`concurrent:${result}`))).then(concurrents => console.log(JSON.stringify(concurrents)))
+    })
+  })
+  // setInterval(() => socket.broadcast.emit("ONLINE", { username: "Case" }), 5000)
+  socket.on("NEW_SESSION", data => {
+    console.log(`New Session: ` + data)
+    client.set(`concurrent:${data}`, socket.id, (err, data) => {
+      if (data) console.log("success")
+    })
+  })
+
+  // socket.on("GET_SESSIONS")
 
   // when the client emits 'new message', this listens and executes
   socket.on('new message', (data) => {
@@ -29,12 +49,12 @@ io.on('connection', (socket) => {
 
   // when the client emits 'add user', this listens and executes
   socket.on('add user', (username) => {
-    if (addedUser) return;
+    // if (addedUser) return;
 
     // we store the username in the socket session for this client
     socket.username = username;
     ++numUsers;
-    addedUser = true;
+    // addedUser = true;
     socket.emit('login', {
       numUsers: numUsers
     });
@@ -61,8 +81,8 @@ io.on('connection', (socket) => {
 
   // when the user disconnects.. perform this
   socket.on('disconnect', () => {
-    if (addedUser) {
-      --numUsers;
+    if (true) {
+      // --numUsers;
 
       // echo globally that this client has left
       socket.broadcast.emit('user left', {

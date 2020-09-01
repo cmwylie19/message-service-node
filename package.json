@@ -7,10 +7,10 @@
     "testEnvironment": "node"
   },
   "scripts": {
+    "lint": "prettier --write **/**/*.js **/*.js",
     "test": "jest --watchAll --coverage --silent",
     "test:unit": "jest --coverage --silent",
     "test:cov": "jest --coverage",
-    "lint": "npx prettier --write **/* **/*/*",
     "start": "node -r esm index.js"
   },
   "author": "Casey Wylie",
