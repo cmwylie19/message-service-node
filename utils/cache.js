@@ -17,10 +17,12 @@ export const Cache = () => {
   const getAsync = promisify(client.get).bind(client);
   const scanAsync = promisify(client.keys).bind(client);
   const setAsync = promisify(client.set).bind(client);
+  const delAsync = promisify(client.del).bind(client);
   return {
     client,
     getAsync,
     setAsync,
-    scanAsync
+    scanAsync,
+    delAsync
   };
 };

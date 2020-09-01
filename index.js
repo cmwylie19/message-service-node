@@ -16,7 +16,7 @@ server.listen(port, () => {
 
 var numUsers = 0;
 
-const { client, getAsync, setAsync, scanAsync } = Cache();
+const { client, getAsync, delAsync, setAsync, scanAsync } = Cache();
 
 io.on('connection', (socket) => {
   console.log(`Connection ${socket.id}`)
@@ -36,7 +36,8 @@ io.on('connection', (socket) => {
     })
   })
 
-  // socket.on("GET_SESSIONS")
+  socket.on("LOGOUT", username => client.del(`concurrent:${username}`))
+  //socket.on("LOGOUT", username => console.log(`concurrent:${username}`))
 
   // when the client emits 'new message', this listens and executes
   socket.on('new message', (data) => {
