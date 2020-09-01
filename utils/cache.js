@@ -8,7 +8,7 @@ export const Cache = () => {
     process.env.CACHE_HOST
   );
 
-  client.on("error", function (error) {
+  client.on("error", function(error) {
     console.error(`Could not connect to Message Cache ❌\n${error}`);
   });
 

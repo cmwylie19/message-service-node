@@ -30,10 +30,7 @@ io.on('connection', (socket) => {
   })
   // setInterval(() => socket.broadcast.emit("ONLINE", { username: "Case" }), 5000)
   socket.on("NEW_SESSION", data => {
-    console.log(`New Session: ` + data)
-    client.set(`concurrent:${data}`, socket.id, (err, data) => {
-      if (data) console.log("success")
-    })
+    client.set(`concurrent:${data}`, socket.id)
   })
 
   socket.on("LOGOUT", username => client.del(`concurrent:${username}`))
