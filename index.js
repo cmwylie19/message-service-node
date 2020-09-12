@@ -14,8 +14,6 @@ server.listen(port, () => {
   console.log('Server listening at port %d', port);
 });
 
-var numUsers = 0;
-
 const { client, getAsync, delAsync, setAsync, scanAsync } = Cache();
 
 io.on('connection', (socket) => {
@@ -24,44 +22,33 @@ io.on('connection', (socket) => {
 
   socket.on("CONCURRENT_USERS", () => {
     scanAsync("concurrent:*").then(results => {
+      io.to(socket.io).emit("CONCURRENT_USERS", results)
       console.log(JSON.stringify(results))
       //   Promise.all(results.map(result => getAsync(`concurrent:${result}`))).then(concurrents => console.log(JSON.stringify(concurrents)))
     })
   })
   // setInterval(() => socket.broadcast.emit("ONLINE", { username: "Case" }), 5000)
-  socket.on("NEW_SESSION", data => {
-    client.set(`concurrent:${data}`, socket.id)
+  socket.on("LOGIN", username => {
+    client.set(`concurrent:${username}`, socket.id);
+    socket.broadcast.emit("LOGIN", username)
   })
 
-  socket.on("LOGOUT", username => client.del(`concurrent:${username}`))
-  //socket.on("LOGOUT", username => console.log(`concurrent:${username}`))
+  socket.on("LOGOUT", username => {
+    client.del(`concurrent:${username}`);
+    socket.broadcast.emit("LOGOUT", username)
+  })
+  //socket.on("LOGOUT", username => console.log(`concurrent:${username}`)
 
-  // when the client emits 'new message', this listens and executes
-  socket.on('new message', (data) => {
-    // we tell the client to execute 'new message'
-    socket.broadcast.emit('new message', {
-      username: socket.username,
-      message: data
-    });
-  });
-
-  // when the client emits 'add user', this listens and executes
-  socket.on('add user', (username) => {
-    // if (addedUser) return;
-
-    // we store the username in the socket session for this client
-    socket.username = username;
-    ++numUsers;
-    // addedUser = true;
-    socket.emit('login', {
-      numUsers: numUsers
-    });
-    // echo globally (all clients) that a person has connected
-    socket.broadcast.emit('user joined', {
-      username: socket.username,
-      numUsers: numUsers
-    });
-  });
+  socket.on("SEND_MESSAGE", async message => {
+    console.log("SEND_MESSAGE" + message.sender)
+    const { sender, receiver, payload } = message
+    io.to(await client.get(`concurrent:${receiver}`)).emit("NEW_MESSAGE", { sender, payload })
+  })
+  // socket.on("MESSAGE", message => {
+  //   const { name, sender, time, payload } = message;
+  //   client.rpush(name, `${sender}:${time}:${payload}`)
+  //   socket.broadcast.emit("MESSAGE", message)
+  // })
 
   // when the client emits 'typing', we broadcast it to others
   socket.on('typing', () => {
@@ -77,16 +64,5 @@ io.on('connection', (socket) => {
     });
   });
 
-  // when the user disconnects.. perform this
-  socket.on('disconnect', () => {
-    if (true) {
-      // --numUsers;
 
-      // echo globally that this client has left
-      socket.broadcast.emit('user left', {
-        username: socket.username,
-        numUsers: numUsers
-      });
-    }
-  });
 });
