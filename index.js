@@ -29,6 +29,7 @@ io.on('connection', (socket) => {
   })
   // setInterval(() => socket.broadcast.emit("ONLINE", { username: "Case" }), 5000)
   socket.on("LOGIN", username => {
+    socket.username = username;
     client.set(`concurrent:${username}`, socket.id);
     socket.broadcast.emit("LOGIN", username)
   })
@@ -39,10 +40,10 @@ io.on('connection', (socket) => {
   })
   //socket.on("LOGOUT", username => console.log(`concurrent:${username}`)
 
-  socket.on("SEND_MESSAGE", async message => {
-    console.log("SEND_MESSAGE" + message.sender)
+  socket.on("MESSAGE", async message => {
+    console.log("MESSAGE" + message.sender)
     const { sender, receiver, payload } = message
-    io.to(await client.get(`concurrent:${receiver}`)).emit("NEW_MESSAGE", { sender, payload })
+    io.to(await client.get(`concurrent:${receiver}`)).emit("NEW_MESSAGE", { sender, payload, receiver })
   })
   // socket.on("MESSAGE", message => {
   //   const { name, sender, time, payload } = message;
@@ -63,6 +64,11 @@ io.on('connection', (socket) => {
       username: socket.username
     });
   });
+
+  socket.on('disconnect', () => {
+    console.log(`${socket.id} disconnected`)
+    // check to see if given socket.id is in concurrent users
+  })
 
 
 });
