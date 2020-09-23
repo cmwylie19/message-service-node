@@ -43,13 +43,9 @@ io.on('connection', (socket) => {
   socket.on("MESSAGE", async message => {
     console.log("MESSAGE" + message.sender)
     const { sender, receiver, payload } = message
-    io.to(await client.get(`concurrent:${receiver}`)).emit("NEW_MESSAGE", { sender, payload, receiver })
+    io.to(await getAsync(`concurrent:${receiver}`)).emit("NEW_MESSAGE", { sender, payload, receiver })
   })
-  // socket.on("MESSAGE", message => {
-  //   const { name, sender, time, payload } = message;
-  //   client.rpush(name, `${sender}:${time}:${payload}`)
-  //   socket.broadcast.emit("MESSAGE", message)
-  // })
+
 
   // when the client emits 'typing', we broadcast it to others
   socket.on('typing', () => {
