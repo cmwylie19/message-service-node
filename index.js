@@ -44,6 +44,7 @@ io.on('connection', (socket) => {
     console.log("MESSAGE" + message.sender)
     const { sender, receiver, payload } = message
     io.to(await getAsync(`concurrent:${receiver}`)).emit("NEW_MESSAGE", { sender, payload, receiver })
+    io.to(await getAsync(`concurrent:${sender}`)).emit("NEW_MESSAGE", { sender, payload, receiver })
   })
 
 
