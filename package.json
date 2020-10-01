@@ -7,7 +7,7 @@
     "testEnvironment": "node"
   },
   "scripts": {
-    "lint": "prettier --write **/**/*.js **/*.js",
+    "lint": "prettier --write **/**/*.js **/*.js *.js",
     "test": "jest --watchAll --coverage --silent",
     "test:unit": "jest --coverage --silent",
     "test:cov": "jest --coverage",
