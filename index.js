@@ -17,12 +17,18 @@ server.listen(port, () => {
 const { client, getAsync, delAsync, setAsync, scanAsync } = Cache();
 
 io.on('connection', (socket) => {
-  console.log(`Connection ${socket.id}`)
+  // console.log(`Connection ${socket.id}`)
+  socket.on("CONNECT", username => {
+    // socket.username = username;
+    client.set(`concurrent:${username}`, socket.id);
+    client.set(`concurrent2:${socket.id}`, username);
+  })
 
 
   socket.on("CONCURRENT_USERS", () => {
     scanAsync("concurrent:*").then(results => {
-      io.to(socket.io).emit("CONCURRENT_USERS", results)
+      console.log("Socket.io " + socket.id)
+      io.to(socket.id).emit("CONCURRENT_USERS", results)
       console.log(JSON.stringify(results))
       //   Promise.all(results.map(result => getAsync(`concurrent:${result}`))).then(concurrents => console.log(JSON.stringify(concurrents)))
     })
@@ -31,6 +37,7 @@ io.on('connection', (socket) => {
   socket.on("LOGIN", username => {
     socket.username = username;
     client.set(`concurrent:${username}`, socket.id);
+    client.set(`concurrent2:${socket.id}`, username);
     socket.broadcast.emit("LOGIN", username)
   })
 
@@ -62,9 +69,17 @@ io.on('connection', (socket) => {
     });
   });
 
-  socket.on('disconnect', () => {
-    console.log(`${socket.id} disconnected`)
-    // check to see if given socket.id is in concurrent users
+  // TODO Write function to delete concurrent user by id
+  socket.on('disconnect', async () => {
+    getAsync(`concurrent2:${socket.id}`).then(user => {
+
+      if (user !== null) {
+        console.log(user + " has disconnecte3d")
+        socket.broadcast.emit("LOGOUT", user)
+        client.del(`concurrent2:${socket.id}`)
+        client.del(`concurrent:${username}`)
+      }
+    })
   })
 
 
