@@ -15,74 +15,131 @@ server.listen(port, () => {
 
 const { client, getAsync, delAsync, setAsync, scanAsync } = Cache();
 
-io.on("connection", socket => {
-  // console.log(`Connection ${socket.id}`)
-  socket.on("CONNECT", username => {
-    // socket.username = username;
-    client.set(`concurrent:${username}`, socket.id);
-    client.set(`concurrent2:${socket.id}`, username);
-  });
+// io.on("connection", socket => {
+//   socket.on("CONNECT", username => {
+//     client.set(`concurrent:${username}`, socket.id);
+//     client.set(`concurrent2:${socket.id}`, username);
+//   });
 
-  socket.on("CONCURRENT_USERS", () => {
-    scanAsync("concurrent:*").then(results => {
-      console.log("Socket.io " + socket.id);
-      io.to(socket.id).emit("CONCURRENT_USERS", results);
-      console.log(JSON.stringify(results));
-      //   Promise.all(results.map(result => getAsync(`concurrent:${result}`))).then(concurrents => console.log(JSON.stringify(concurrents)))
+//   socket.on("CONCURRENT_USERS", () => {
+//     scanAsync("concurrent:*").then(results => {
+//       console.log("Socket.io " + socket.id);
+//       io.to(socket.id).emit("CONCURRENT_USERS", results);
+//       console.log(JSON.stringify(results));
+//     });
+//   });
+
+//   socket.on("LOGIN", username => {
+//     socket.username = username;
+//     client.set(`concurrent:${username}`, socket.id);
+//     client.set(`concurrent2:${socket.id}`, username);
+//     socket.broadcast.emit("LOGIN", username);
+//   });
+
+//   socket.on("LOGOUT", username => {
+//     client.del(`concurrent:${username}`);
+//     socket.broadcast.emit("LOGOUT", username);
+//   });
+
+
+//   socket.on("MESSAGE", async message => {
+//     console.log("MESSAGE" + message.sender);
+//     const { sender, receiver, payload } = message;
+//     io.to(await getAsync(`concurrent:${receiver}`)).emit("NEW_MESSAGE", {
+//       sender,
+//       payload,
+//       receiver
+//     });
+//     io.to(await getAsync(`concurrent:${sender}`)).emit("NEW_MESSAGE", {
+//       sender,
+//       payload,
+//       receiver
+//     });
+//   });
+
+//   // when the client emits 'typing', we broadcast it to others
+//   socket.on("typing", () => {
+//     socket.broadcast.emit("typing", {
+//       username: socket.username
+//     });
+//   });
+
+//   // when the client emits 'stop typing', we broadcast it to others
+//   socket.on("stop typing", () => {
+//     socket.broadcast.emit("stop typing", {
+//       username: socket.username
+//     });
+//   });
+
+//   // TODO Write function to delete concurrent user by id
+//   socket.on("disconnect", async () => {
+//     getAsync(`concurrent2:${socket.id}`).then(user => {
+//       if (user !== null) {
+//         console.log(user + " has disconnecte3d");
+//         socket.broadcast.emit("LOGOUT", user);
+//         client.del(`concurrent2:${socket.id}`);
+//         client.del(`concurrent:${username}`);
+//       }
+//     });
+//   });
+
+
+var numUsers = 0;
+
+io.on('connection', (socket) => {
+  var addedUser = false;
+
+  // when the client emits 'new message', this listens and executes
+  socket.on('new message', (data) => {
+    // we tell the client to execute 'new message'
+    socket.broadcast.emit('new message', {
+      username: socket.username,
+      message: data
     });
   });
-  // setInterval(() => socket.broadcast.emit("ONLINE", { username: "Case" }), 5000)
-  socket.on("LOGIN", username => {
+
+  // when the client emits 'add user', this listens and executes
+  socket.on('add user', (username) => {
+    if (addedUser) return;
+
+    // we store the username in the socket session for this client
     socket.username = username;
-    client.set(`concurrent:${username}`, socket.id);
-    client.set(`concurrent2:${socket.id}`, username);
-    socket.broadcast.emit("LOGIN", username);
-  });
-
-  socket.on("LOGOUT", username => {
-    client.del(`concurrent:${username}`);
-    socket.broadcast.emit("LOGOUT", username);
-  });
-  //socket.on("LOGOUT", username => console.log(`concurrent:${username}`)
-
-  socket.on("MESSAGE", async message => {
-    console.log("MESSAGE" + message.sender);
-    const { sender, receiver, payload } = message;
-    io.to(await getAsync(`concurrent:${receiver}`)).emit("NEW_MESSAGE", {
-      sender,
-      payload,
-      receiver
+    ++numUsers;
+    addedUser = true;
+    socket.emit('login', {
+      numUsers: numUsers
     });
-    io.to(await getAsync(`concurrent:${sender}`)).emit("NEW_MESSAGE", {
-      sender,
-      payload,
-      receiver
+    // echo globally (all clients) that a person has connected
+    socket.broadcast.emit('user joined', {
+      username: socket.username,
+      numUsers: numUsers
     });
   });
 
   // when the client emits 'typing', we broadcast it to others
-  socket.on("typing", () => {
-    socket.broadcast.emit("typing", {
+  socket.on('typing', () => {
+    socket.broadcast.emit('typing', {
       username: socket.username
     });
   });
 
   // when the client emits 'stop typing', we broadcast it to others
-  socket.on("stop typing", () => {
-    socket.broadcast.emit("stop typing", {
+  socket.on('stop typing', () => {
+    socket.broadcast.emit('stop typing', {
       username: socket.username
     });
   });
 
-  // TODO Write function to delete concurrent user by id
-  socket.on("disconnect", async () => {
-    getAsync(`concurrent2:${socket.id}`).then(user => {
-      if (user !== null) {
-        console.log(user + " has disconnecte3d");
-        socket.broadcast.emit("LOGOUT", user);
-        client.del(`concurrent2:${socket.id}`);
-        client.del(`concurrent:${username}`);
-      }
-    });
+  // when the user disconnects.. perform this
+  socket.on('disconnect', () => {
+    if (addedUser) {
+      --numUsers;
+
+      // echo globally that this client has left
+      socket.broadcast.emit('user left', {
+        username: socket.username,
+        numUsers: numUsers
+      });
+    }
   });
 });
