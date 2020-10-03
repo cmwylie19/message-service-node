@@ -99,11 +99,15 @@ io.on('connection', (socket) => {
   });
 
   // when the client emits 'add user', this listens and executes
-  socket.on('add user', (username) => {
+  socket.on('add user', ({ username, name }) => {
     if (addedUser) return;
+
+    client.set(`concurrent:${username}`, `${socket.id}`);
+    client.set(`concurrent2: ${socket.id}`, username);
 
     // we store the username in the socket session for this client
     socket.username = username;
+    socket.familyName = name
     ++numUsers;
     addedUser = true;
     socket.emit('login', {
@@ -118,6 +122,7 @@ io.on('connection', (socket) => {
 
   // when the client emits 'typing', we broadcast it to others
   socket.on('typing', () => {
+    console.log("TYPING")
     socket.broadcast.emit('typing', {
       username: socket.username
     });
@@ -130,10 +135,19 @@ io.on('connection', (socket) => {
     });
   });
 
+  socket.on("CONCURRENT_USERS", () => {
+    scanAsync("concurrent:*").then(results => {
+      io.to(socket.id).emit("CONCURRENT_USERS", results);
+    });
+  });
+
   // when the user disconnects.. perform this
   socket.on('disconnect', () => {
     if (addedUser) {
       --numUsers;
+
+      client.del(`concurrent2: ${socket.id}`);
+      client.del(`concurrent: ${socket.username}`);
 
       // echo globally that this client has left
       socket.broadcast.emit('user left', {
